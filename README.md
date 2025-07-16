@@ -40,7 +40,7 @@ A modern, production-ready Python application for synchronizing Splunk knowledge
 1. **Clone the repository**:
    ```bash
    git clone <repository-url>
-   cd Splunk2Git
+   cd splunk-sync-cli
    ```
 
 2. **Install dependencies**:
