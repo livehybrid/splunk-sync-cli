@@ -1,0 +1,6 @@
+.DS_Store
+*.log
+events.pickle
+**/*.pyc
+__pycache__
+tests/__pycache__/

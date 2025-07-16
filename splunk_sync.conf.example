@@ -1,0 +1,78 @@
+# Splunk Synchronization Tool Configuration
+# This is an example configuration file showing all available options
+
+[splunk]
+# Splunk server connection details
+host = localhost
+port = 8089
+scheme = https
+
+# Authentication - use either username/password or token
+username = admin
+password = changeme
+# token = your-auth-token-here
+
+# Default app and owner context
+app = search
+owner = admin
+
+# Connection settings
+verify_ssl = true
+timeout = 60
+retry_count = 3
+retry_delay = 1.0
+
+[proxy]
+# Proxy settings (optional)
+# host = proxy.example.com
+# port = 8080
+# username = proxy_user
+# password = proxy_pass
+
+[knowledge_objects]
+# Knowledge object types to synchronize
+types = macros,tags,eventtypes,savedsearches,workflow_actions,transforms,props,lookups
+
+# Keys to ignore during synchronization
+ignored_keys = actions,alert_threshold,alert_comparator
+
+# Savedsearches filtering with regex
+# Examples:
+# savedsearches_allowlist = .*                    # Allow all (default)
+# savedsearches_allowlist = Alert.*               # Only alerts
+# savedsearches_allowlist = (Test|Prod).*         # Test or Prod prefixes
+# savedsearches_allowlist = ^(?!.*temp).*$        # Exclude anything with "temp"
+savedsearches_allowlist = .*
+
+# Email actions control
+email_actions_allowed = false
+
+# RBAC management
+rbac_enabled = true
+
+# Default permissions for new objects
+[knowledge_objects.default_permissions]
+owner = admin
+sharing = app
+
+# Main synchronization settings
+mode = push
+dry_run = false
+apps_path = ./apps
+target_app = search
+
+# Logging configuration
+log_level = INFO
+# log_file = splunk_sync.log
+debug = false
+
+# Performance settings
+batch_size = 100
+concurrent_requests = 5
+
+# Example usage with environment variables:
+# SPLUNK_HOST=splunk.example.com
+# SPLUNK_TOKEN=your-token-here
+# SAVEDSEARCHES_ALLOWLIST="Alert.*"
+# DRY_RUN=true
+# DEBUG=true
