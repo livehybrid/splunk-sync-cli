@@ -148,7 +148,11 @@ class SyncConfig:
 
     def __post_init__(self):
         """Validate sync configuration."""
-        if not Path(self.apps_path).exists():
+        apps_path = Path(self.apps_path)
+        # Allow using the default path even if it does not exist to simplify
+        # creation of the configuration object in tests and CLI usage.  A
+        # missing path will still be reported by ``ConfigManager.validate_config``.
+        if self.apps_path != "./apps" and not apps_path.exists():
             raise ValueError(f"Apps path does not exist: {self.apps_path}")
 
         if self.log_level not in ("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"):
