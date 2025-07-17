@@ -92,10 +92,8 @@ class TestKnowledgeObjectFilter:
 
     def test_filter_init_invalid_regex(self):
         """Test filter initialization with invalid regex."""
-        config = KnowledgeObjectConfig(savedsearches_allowlist="[invalid")
-
-        with pytest.raises(FilterError, match="Invalid savedsearches allowlist regex"):
-            KnowledgeObjectFilter(config)
+        with pytest.raises(ValueError, match="Invalid savedsearches allowlist regex"):
+            KnowledgeObjectConfig(savedsearches_allowlist="[invalid")
 
     def test_should_process_object_enabled_type(self, sample_knowledge_object):
         """Test should_process_object with enabled type."""

@@ -85,7 +85,10 @@ class ColoredConsoleFormatter(logging.Formatter):
         timestamp = datetime.fromtimestamp(record.created).strftime("%H:%M:%S")
 
         # Create base message
-        base_msg = f"{color}[{timestamp}] {record.levelname:<8}{reset} {record.name}: {record.getMessage()}"
+        base_msg = (
+            f"{color}[{timestamp}] {record.levelname:<8}{reset} "
+            f"{record.name}: {record.getMessage()}"
+        )
 
         # Add context if available
         context_parts = []

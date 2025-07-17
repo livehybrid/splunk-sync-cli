@@ -14,8 +14,7 @@ from splunklib.client import Service, connect
 
 from .config import ProxyConfig, SplunkConnectionConfig
 from .exceptions import (APIError, AuthenticationError, AuthorizationError,
-                         ConnectionError, HTTPError, RetryExhaustedError,
-                         SplunkSyncError)
+                         HTTPError, RetryExhaustedError, SplunkSyncError)
 
 logger = logging.getLogger(__name__)
 
@@ -94,10 +93,10 @@ class SplunkClient:
                         )
                         time.sleep(self.config.retry_delay)
                         continue
-                    raise ConnectionError(
-                        error_msg,
-                        host=self.config.host,
-                        port=self.config.port,
+                    raise RetryExhaustedError(
+                        f"Failed to connect after {self.config.retry_count + 1} attempts",
+                        attempts=self.config.retry_count + 1,
+                        last_error=e,
                         context={"status_code": e.status, "message": str(e)},
                     )
 
@@ -110,10 +109,10 @@ class SplunkClient:
                     time.sleep(self.config.retry_delay)
                     continue
 
-                raise ConnectionError(
-                    error_msg,
-                    host=self.config.host,
-                    port=self.config.port,
+                raise RetryExhaustedError(
+                    f"Failed to connect after {self.config.retry_count + 1} attempts",
+                    attempts=self.config.retry_count + 1,
+                    last_error=e,
                     context={"original_error": str(e)},
                 )
 
@@ -296,7 +295,7 @@ class SplunkClient:
                 self.service.namespace.app = app
 
             conf = self.service.confs[ko_type]
-            stanza = conf.create(stanza_name, **content)
+            conf.create(stanza_name, **content)
 
             logger.info(f"Created {ko_type}/{stanza_name}")
 

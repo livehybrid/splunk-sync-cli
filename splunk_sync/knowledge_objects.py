@@ -72,7 +72,8 @@ class KnowledgeObjectFilter:
         if ko.ko_type == "savedsearches":
             if not self.savedsearches_pattern.match(ko.name):
                 logger.info(
-                    f"Skipping savedsearch '{ko.name}' - not in allowlist pattern: {self.config.savedsearches_allowlist}"
+                    f"Skipping savedsearch '{ko.name}' - not in allowlist "
+                    f"pattern: {self.config.savedsearches_allowlist}"
                 )
                 return False
 

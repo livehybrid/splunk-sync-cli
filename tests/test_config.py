@@ -391,7 +391,12 @@ class TestConfigIntegration:
         """Test end-to-end configuration loading."""
         # Create config file
         config_file = temp_dir / "integration.conf"
-        config_content = """[splunk]
+        config_content = """[DEFAULT]
+mode = sync
+dry_run = true
+target_app = integration_app
+
+[splunk]
 host = integration.splunk.com
 port = 8089
 token = integration-token
@@ -401,10 +406,6 @@ app = integration_app
 types = macros,savedsearches
 savedsearches_allowlist = Integration.*
 rbac_enabled = true
-
-mode = sync
-dry_run = true
-target_app = integration_app
 """
         config_file.write_text(config_content)
 
