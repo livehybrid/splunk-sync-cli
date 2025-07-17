@@ -207,7 +207,6 @@ class HTTPError(SplunkSyncError):
     """Custom HTTPError for testing and compatibility with splunklib.binding.HTTPError."""
 
     def __init__(self, *args, **kwargs):
-        print(f"DEBUG_HTTPERROR_ARGS: {args}")
         if len(args) >= 3:
             message, status, reason = args[:3]
             super().__init__(message)

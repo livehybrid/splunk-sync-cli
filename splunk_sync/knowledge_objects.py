@@ -144,7 +144,7 @@ class SavedSearchHandler(KnowledgeObjectHandler):
 
     def validate(self, ko: KnowledgeObject) -> List[str]:
         """Validate savedsearch configuration."""
-        issues = []
+        issues: List[str] = []
 
         # Check required fields
         if "search" not in ko.content:
@@ -224,7 +224,7 @@ class MacroHandler(KnowledgeObjectHandler):
 
     def validate(self, ko: KnowledgeObject) -> List[str]:
         """Validate macro configuration."""
-        issues = []
+        issues: List[str] = []
 
         # Check required fields
         if "definition" not in ko.content:
@@ -403,7 +403,7 @@ class PropsHandler(KnowledgeObjectHandler):
 
     def validate(self, ko: KnowledgeObject) -> List[str]:
         """Validate props configuration."""
-        issues = []
+        issues: List[str] = []
 
         # Props validation is complex and depends on the stanza type
         # This is a simplified version
@@ -474,7 +474,7 @@ class KnowledgeObjectManager:
                 return []
 
             config = configparser.RawConfigParser()
-            config.optionxform = str  # Preserve case
+            config.optionxform = str  # type: ignore[assignment]  # Preserve case
             config.read(file_path)
 
             objects = []
@@ -513,7 +513,7 @@ class KnowledgeObjectManager:
         """Save knowledge objects to a configuration file."""
         try:
             config = configparser.RawConfigParser()
-            config.optionxform = str  # Preserve case
+            config.optionxform = str  # type: ignore[assignment]  # Preserve case
 
             for ko in objects:
                 if ko.ko_type != ko_type:

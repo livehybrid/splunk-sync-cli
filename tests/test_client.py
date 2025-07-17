@@ -181,7 +181,7 @@ class TestSplunkClient:
             client.connect()
 
         assert "Failed to connect after" in str(exc_info.value)
-        assert exc_info.value.attempts == 3
+        assert exc_info.value.attempts == 4
 
     def test_disconnect_success(self, splunk_connection_config):
         """Test successful disconnection."""

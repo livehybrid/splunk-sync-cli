@@ -13,7 +13,7 @@ import sys
 import traceback
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
+from typing import Any, Dict, Optional
 
 
 class StructuredFormatter(logging.Formatter):
@@ -41,8 +41,9 @@ class StructuredFormatter(logging.Formatter):
 
         # Add exception info if present
         if record.exc_info:
+            exc_type = record.exc_info[0]
             log_data["exception"] = {
-                "type": record.exc_info[0].__name__,
+                "type": exc_type.__name__ if exc_type else "Unknown",
                 "message": str(record.exc_info[1]),
                 "traceback": traceback.format_exception(*record.exc_info),
             }
@@ -117,7 +118,7 @@ class SplunkSyncLogger:
     def __init__(self, logger: logging.Logger):
         """Initialize with base logger."""
         self.logger = logger
-        self.context = {}
+        self.context: dict = {}
 
     def set_context(self, **kwargs):
         """Set context for all subsequent log messages."""
@@ -225,7 +226,7 @@ class LoggingManager:
         console_handler.setLevel(log_level)
 
         if structured:
-            console_formatter = StructuredFormatter()
+            console_formatter: logging.Formatter = StructuredFormatter()
         else:
             console_formatter = ColoredConsoleFormatter()
 
@@ -323,7 +324,7 @@ class LoggingManager:
 
     def _sanitize_config(self, config: dict) -> dict:
         """Remove sensitive information from configuration."""
-        sanitized = {}
+        sanitized: Dict[str, Any] = {}
 
         sensitive_keys = {
             "password",
