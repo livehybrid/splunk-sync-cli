@@ -5,14 +5,14 @@ This module provides a centralized configuration system with validation,
 environment variable support, and extensible settings management.
 """
 
+import configparser
+import logging
 import os
 import re
 from dataclasses import dataclass, field
-from pathlib import Path
-from typing import Dict, List, Optional, Union, Any
-import configparser
-import logging
 from enum import Enum
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Union
 
 logger = logging.getLogger(__name__)
 
@@ -187,10 +187,34 @@ class ConfigManager:
         config_data = self._load_base_config()
         self._apply_environment_overrides(config_data)
 
+        # Define sync-level settings to filter out from section-specific configs
+        sync_level_keys = [
+            "mode",
+            "dry_run",
+            "target_app",
+            "log_level",
+            "log_file",
+            "debug",
+            "batch_size",
+            "concurrent_requests",
+            "apps_path",
+        ]
+
         # Build configuration objects
-        splunk_config = SplunkConnectionConfig(**config_data.get("splunk", {}))
-        proxy_config = ProxyConfig(**config_data.get("proxy", {}))
-        ko_config = KnowledgeObjectConfig(**config_data.get("knowledge_objects", {}))
+        splunk_dict = dict(config_data.get("splunk", {}))
+        for k in sync_level_keys:
+            splunk_dict.pop(k, None)
+        splunk_config = SplunkConnectionConfig(**splunk_dict)
+
+        proxy_dict = dict(config_data.get("proxy", {}))
+        for k in sync_level_keys:
+            proxy_dict.pop(k, None)
+        proxy_config = ProxyConfig(**proxy_dict)
+
+        ko_dict = dict(config_data.get("knowledge_objects", {}))
+        for k in sync_level_keys:
+            ko_dict.pop(k, None)
+        ko_config = KnowledgeObjectConfig(**ko_dict)
 
         # Extract sync settings
         sync_settings = {
@@ -198,6 +222,12 @@ class ConfigManager:
             for k, v in config_data.items()
             if k not in ("splunk", "proxy", "knowledge_objects")
         }
+        # Convert mode string to SyncMode enum if present
+        if "mode" in sync_settings and isinstance(sync_settings["mode"], str):
+            try:
+                sync_settings["mode"] = SyncMode(sync_settings["mode"].lower())
+            except ValueError:
+                sync_settings["mode"] = SyncMode.PUSH
 
         self._config = SyncConfig(
             splunk=splunk_config,
@@ -224,13 +254,21 @@ class ConfigManager:
         parser.read(config_file)
 
         # Convert to nested dictionary
-        config_data = {}
+        config_data: Dict[str, Any] = {}
+
+        # Handle DEFAULT section (values outside any section)
+        if parser.defaults():
+            default_data = dict(parser.defaults())
+            for key, value in default_data.items():
+                config_data[key] = self._convert_value(value, key)
+
+        # Handle named sections
         for section_name in parser.sections():
-            section_data = dict(parser[section_name])
+            section_data: Dict[str, Any] = dict(parser[section_name])
 
             # Convert string values to appropriate types
             for key, value in section_data.items():
-                section_data[key] = self._convert_value(value)
+                section_data[key] = self._convert_value(value, key)
 
             config_data[section_name] = section_data
 
@@ -283,27 +321,25 @@ class ConfigManager:
                 else:
                     config_data[key] = converted_value
 
-    def _convert_value(self, value: str) -> Union[str, int, bool, float]:
+    def _convert_value(
+        self, value: str, key: Optional[str] = None
+    ) -> Union[str, int, bool, float, list]:
         """Convert string value to appropriate type."""
         # Boolean conversion
         if value.lower() in ("true", "yes", "1", "on"):
             return True
         if value.lower() in ("false", "no", "0", "off"):
             return False
-
         # Integer conversion
         try:
-            return int(value)
-        except ValueError:
-            pass
-
-        # Float conversion
-        try:
+            if "." not in value:
+                return int(value)
             return float(value)
         except ValueError:
             pass
-
-        # Return as string
+        # List conversion for known keys
+        if key in ("types",):
+            return [v.strip() for v in value.split(",") if v.strip()]
         return value
 
     def validate_config(self, config: SyncConfig) -> List[str]:

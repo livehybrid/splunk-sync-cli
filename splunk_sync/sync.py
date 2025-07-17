@@ -7,24 +7,16 @@ and remote Splunk servers with comprehensive error handling and progress trackin
 
 import re
 import time
-from pathlib import Path
-from typing import Dict, Any, List, Optional, Set, Tuple
 from dataclasses import dataclass, field
-from concurrent.futures import ThreadPoolExecutor, as_completed
-import asyncio
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
-from .config import SyncConfig, SyncMode
 from .client import SplunkClient
-from .knowledge_objects import KnowledgeObjectManager, KnowledgeObject
+from .config import SyncConfig, SyncMode
+from .exceptions import FileOperationError, SplunkSyncError
+from .knowledge_objects import KnowledgeObject, KnowledgeObjectManager
+from .logging import get_logger, log_operation
 from .rbac import RBACManager
-from .logging import get_logger, log_operation, log_ko_operation
-from .exceptions import (
-    SplunkSyncError,
-    ValidationError,
-    SyncConflictError,
-    FileOperationError,
-    FilterError,
-)
 
 logger = get_logger(__name__)
 
@@ -349,8 +341,6 @@ class SplunkSynchronizer:
         local_lookup = {(ko.ko_type, ko.name): ko for ko in local_objects}
 
         # Group by app and type for efficient file operations
-        objects_by_app_type = {}
-
         for ko in remote_objects:
             try:
                 local_ko = local_lookup.get((ko.ko_type, ko.name))

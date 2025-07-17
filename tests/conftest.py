@@ -4,20 +4,16 @@ Pytest configuration and fixtures for Splunk Synchronization Tool tests.
 This module provides common fixtures and configuration for all test modules.
 """
 
-import pytest
-import tempfile
 import os
+import tempfile
 from pathlib import Path
-from typing import Dict, Any, List
-from unittest.mock import Mock, MagicMock
+from typing import Any, Dict, List
+from unittest.mock import MagicMock, Mock
 
-from splunk_sync.config import (
-    SyncConfig,
-    SplunkConnectionConfig,
-    ProxyConfig,
-    KnowledgeObjectConfig,
-    SyncMode,
-)
+import pytest
+
+from splunk_sync.config import (KnowledgeObjectConfig, ProxyConfig,
+                                SplunkConnectionConfig, SyncConfig, SyncMode)
 from splunk_sync.knowledge_objects import KnowledgeObject
 from splunk_sync.rbac import ACL, Permission, SharingLevel
 
@@ -66,9 +62,13 @@ def splunk_connection_config() -> SplunkConnectionConfig:
         scheme="https",
         username="admin",
         password="changeme",
+        token="changeme",
         app="search",
+        owner="admin",
         verify_ssl=True,
         timeout=60,
+        retry_count=3,
+        retry_delay=1.0,
     )
 
 

@@ -5,7 +5,7 @@ This module defines a hierarchy of exceptions that provide detailed
 error information for different failure scenarios.
 """
 
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
 
 
 class SplunkSyncError(Exception):
@@ -201,3 +201,27 @@ class FilterError(SplunkSyncError):
         """Initialize with filter details."""
         super().__init__(message, context)
         self.filter_pattern = filter_pattern
+
+
+class HTTPError(SplunkSyncError):
+    """Custom HTTPError for testing and compatibility with splunklib.binding.HTTPError."""
+
+    def __init__(self, *args, **kwargs):
+        if len(args) >= 3:
+            message, status, reason = args[:3]
+            super().__init__(message)
+            self.status = status
+            self.reason = reason
+        elif len(args) == 2:
+            message, response = args
+            super().__init__(message)
+            self.status = getattr(response, "status", None)
+            self.reason = getattr(response, "reason", None)
+        elif len(args) == 1:
+            super().__init__(args[0])
+            self.status = None
+            self.reason = None
+        else:
+            super().__init__("HTTPError")
+            self.status = None
+            self.reason = None

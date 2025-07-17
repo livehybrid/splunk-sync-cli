@@ -123,25 +123,25 @@ Examples:
     
     if args.format or args.all:
         # Format code
-        if not run_command(["black", "splunk_sync/", "tests/"], "Formatting code with black"):
+        if not run_command(["python3", "-m", "black", "splunk_sync/", "tests/"], "Formatting code with black"):
             success = False
         
-        if not run_command(["isort", "splunk_sync/", "tests/"], "Sorting imports with isort"):
+        if not run_command(["python3", "-m", "isort", "splunk_sync/", "tests/"], "Sorting imports with isort"):
             success = False
     
     if args.lint or args.all:
         # Run linting
-        if not run_command(["flake8", "splunk_sync/"], "Running flake8 linting"):
+        if not run_command(["python3", "-m", "flake8", "--max-line-length", "100", "splunk_sync/"], "Running flake8 linting"):
             success = False
     
     if args.type_check or args.all:
         # Run type checking
-        if not run_command(["mypy", "splunk_sync/"], "Running mypy type checking"):
+        if not run_command(["python3", "-m", "mypy", "splunk_sync/"], "Running mypy type checking"):
             success = False
     
     if not any([args.lint, args.format, args.type_check]) or args.all:
         # Build pytest command
-        cmd = ["python", "-m", "pytest"]
+        cmd = ["python3", "-m", "pytest"]
         
         # Add test selection
         if args.unit:

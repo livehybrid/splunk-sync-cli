@@ -5,27 +5,19 @@ This module provides a modern, robust client for interacting with Splunk
 servers through REST API calls with proper error handling and retry logic.
 """
 
+import logging
 import ssl
 import time
-import logging
-from typing import Dict, Any, Optional, List, Union
-from urllib.parse import urlencode, quote
-import base64
-import json
+from typing import Any, Dict, List, Optional
 
-from splunklib.client import connect, Service
-from splunklib.binding import HTTPError, ResponseReader
-from splunklib import six
+import splunklib.binding as binding  # type: ignore[import]
+from splunklib.client import Service, connect  # type: ignore[import]
 
-from .config import SplunkConnectionConfig, ProxyConfig
-from .exceptions import (
-    ConnectionError,
-    AuthenticationError,
-    AuthorizationError,
-    APIError,
-    RetryExhaustedError,
-    SplunkSyncError,
-)
+from .config import ProxyConfig, SplunkConnectionConfig
+from .exceptions import (APIError, AuthenticationError, AuthorizationError,
+                         HTTPError, RetryExhaustedError, SplunkSyncError)
+
+SplunklibHTTPError = binding.HTTPError
 
 logger = logging.getLogger(__name__)
 
@@ -84,7 +76,7 @@ class SplunkClient:
 
                 return
 
-            except HTTPError as e:
+            except (HTTPError, SplunklibHTTPError) as e:
                 if e.status == 401:
                     raise AuthenticationError(
                         "Authentication failed - check credentials",
@@ -104,10 +96,10 @@ class SplunkClient:
                         )
                         time.sleep(self.config.retry_delay)
                         continue
-                    raise ConnectionError(
-                        error_msg,
-                        host=self.config.host,
-                        port=self.config.port,
+                    raise RetryExhaustedError(
+                        f"Failed to connect after {self.config.retry_count + 1} attempts",
+                        attempts=self.config.retry_count + 1,
+                        last_error=e,
                         context={"status_code": e.status, "message": str(e)},
                     )
 
@@ -120,16 +112,16 @@ class SplunkClient:
                     time.sleep(self.config.retry_delay)
                     continue
 
-                raise ConnectionError(
-                    error_msg,
-                    host=self.config.host,
-                    port=self.config.port,
+                raise RetryExhaustedError(
+                    f"Failed to connect after {self.config.retry_count + 1} attempts",
+                    attempts=self.config.retry_count + 1,
+                    last_error=e,
                     context={"original_error": str(e)},
                 )
 
         raise RetryExhaustedError(
-            f"Failed to connect after {self.config.retry_count} attempts",
-            attempts=self.config.retry_count,
+            f"Failed to connect after {self.config.retry_count + 1} attempts",
+            attempts=self.config.retry_count + 1,
             last_error=Exception("Connection failed"),
         )
 
@@ -306,7 +298,7 @@ class SplunkClient:
                 self.service.namespace.app = app
 
             conf = self.service.confs[ko_type]
-            stanza = conf.create(stanza_name, **content)
+            conf.create(stanza_name, **content)
 
             logger.info(f"Created {ko_type}/{stanza_name}")
 

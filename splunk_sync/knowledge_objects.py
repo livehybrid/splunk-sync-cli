@@ -5,16 +5,16 @@ This module provides classes for handling different types of Splunk knowledge
 objects with proper validation, filtering, and transformation capabilities.
 """
 
-import re
-import logging
-from abc import ABC, abstractmethod
-from pathlib import Path
-from typing import Dict, Any, List, Optional, Set, Union
-from dataclasses import dataclass
 import configparser
+import logging
+import re
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
-from .exceptions import ValidationError, FilterError, FileOperationError
 from .config import KnowledgeObjectConfig
+from .exceptions import FileOperationError, FilterError, ValidationError
 
 logger = logging.getLogger(__name__)
 
@@ -72,7 +72,8 @@ class KnowledgeObjectFilter:
         if ko.ko_type == "savedsearches":
             if not self.savedsearches_pattern.match(ko.name):
                 logger.info(
-                    f"Skipping savedsearch '{ko.name}' - not in allowlist pattern: {self.config.savedsearches_allowlist}"
+                    f"Skipping savedsearch '{ko.name}' - not in allowlist "
+                    f"pattern: {self.config.savedsearches_allowlist}"
                 )
                 return False
 
@@ -143,7 +144,7 @@ class SavedSearchHandler(KnowledgeObjectHandler):
 
     def validate(self, ko: KnowledgeObject) -> List[str]:
         """Validate savedsearch configuration."""
-        issues = []
+        issues: List[str] = []
 
         # Check required fields
         if "search" not in ko.content:
@@ -223,7 +224,7 @@ class MacroHandler(KnowledgeObjectHandler):
 
     def validate(self, ko: KnowledgeObject) -> List[str]:
         """Validate macro configuration."""
-        issues = []
+        issues: List[str] = []
 
         # Check required fields
         if "definition" not in ko.content:
@@ -315,9 +316,7 @@ class TagHandler(KnowledgeObjectHandler):
                 issues.append("tag key cannot be empty")
 
             if value not in ("enabled", "disabled"):
-                issues.append(
-                    f"tag value must be 'enabled' or 'disabled', got: {value}"
-                )
+                issues.append("tag value must be 'enabled' or 'disabled'")
 
         return issues
 
@@ -353,7 +352,7 @@ class WorkflowActionHandler(KnowledgeObjectHandler):
         # Validate method
         method = ko.content.get("link.method", "")
         if method not in ("get", "post"):
-            issues.append(f"link.method must be 'get' or 'post', got: {method}")
+            issues.append("link.method must be 'get' or 'post'")
 
         # Validate URI
         uri = ko.content.get("link.uri", "")
@@ -404,7 +403,7 @@ class PropsHandler(KnowledgeObjectHandler):
 
     def validate(self, ko: KnowledgeObject) -> List[str]:
         """Validate props configuration."""
-        issues = []
+        issues: List[str] = []
 
         # Props validation is complex and depends on the stanza type
         # This is a simplified version
@@ -475,7 +474,7 @@ class KnowledgeObjectManager:
                 return []
 
             config = configparser.RawConfigParser()
-            config.optionxform = str  # Preserve case
+            config.optionxform = str  # type: ignore[assignment]  # Preserve case
             config.read(file_path)
 
             objects = []
@@ -514,7 +513,7 @@ class KnowledgeObjectManager:
         """Save knowledge objects to a configuration file."""
         try:
             config = configparser.RawConfigParser()
-            config.optionxform = str  # Preserve case
+            config.optionxform = str  # type: ignore[assignment]  # Preserve case
 
             for ko in objects:
                 if ko.ko_type != ko_type:
