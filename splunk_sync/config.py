@@ -220,8 +220,6 @@ class ConfigManager:
         }
         # Convert mode string to SyncMode enum if present
         if "mode" in sync_settings and isinstance(sync_settings["mode"], str):
-            from .config import SyncMode
-
             try:
                 sync_settings["mode"] = SyncMode(sync_settings["mode"].lower())
             except ValueError:
@@ -252,7 +250,7 @@ class ConfigManager:
         parser.read(config_file)
 
         # Convert to nested dictionary
-        config_data = {}
+        config_data: Dict[str, Any] = {}
 
         # Handle DEFAULT section (values outside any section)
         if parser.defaults():
@@ -262,7 +260,7 @@ class ConfigManager:
 
         # Handle named sections
         for section_name in parser.sections():
-            section_data = dict(parser[section_name])
+            section_data: Dict[str, Any] = dict(parser[section_name])
 
             # Convert string values to appropriate types
             for key, value in section_data.items():
@@ -320,7 +318,7 @@ class ConfigManager:
                     config_data[key] = converted_value
 
     def _convert_value(
-        self, value: str, key: str = None
+        self, value: str, key: Optional[str] = None
     ) -> Union[str, int, bool, float, list]:
         """Convert string value to appropriate type."""
         # Boolean conversion

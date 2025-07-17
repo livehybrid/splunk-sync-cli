@@ -10,11 +10,14 @@ import ssl
 import time
 from typing import Any, Dict, List, Optional
 
-from splunklib.client import Service, connect
+import splunklib.binding as binding  # type: ignore[import]
+from splunklib.client import Service, connect  # type: ignore[import]
 
 from .config import ProxyConfig, SplunkConnectionConfig
 from .exceptions import (APIError, AuthenticationError, AuthorizationError,
                          HTTPError, RetryExhaustedError, SplunkSyncError)
+
+SplunklibHTTPError = binding.HTTPError
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +76,7 @@ class SplunkClient:
 
                 return
 
-            except HTTPError as e:
+            except (HTTPError, SplunklibHTTPError) as e:
                 if e.status == 401:
                     raise AuthenticationError(
                         "Authentication failed - check credentials",
@@ -117,8 +120,8 @@ class SplunkClient:
                 )
 
         raise RetryExhaustedError(
-            f"Failed to connect after {self.config.retry_count} attempts",
-            attempts=self.config.retry_count,
+            f"Failed to connect after {self.config.retry_count + 1} attempts",
+            attempts=self.config.retry_count + 1,
             last_error=Exception("Connection failed"),
         )
 
@@ -419,10 +422,21 @@ class SplunkClient:
             self.disconnect()
 
     def get_server_info(self) -> Dict[str, Any]:
-        """Get Splunk server information."""
+        """Get server information."""
         try:
-            return self.service.info
-        except BaseException as e:
+            info = self.service.info
+            return {
+                "version": info.get("version", "unknown"),
+                "build": info.get("build", "unknown"),
+                "server_name": info.get("server_name", "unknown"),
+                "license_state": info.get("license_state", "unknown"),
+                "license_labels": info.get("license_labels", []),
+                "max_users": info.get("max_users", "unknown"),
+                "cpu_arch": info.get("cpu_arch", "unknown"),
+                "os_name": info.get("os_name", "unknown"),
+                "os_version": info.get("os_version", "unknown"),
+            }
+        except Exception as e:
             raise APIError(
                 f"Failed to get server info: {e}",
                 status_code=0,
