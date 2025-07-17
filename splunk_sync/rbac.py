@@ -6,11 +6,11 @@ for Splunk knowledge objects with proper validation and error handling.
 """
 
 import logging
-from typing import Dict, Any, List, Optional, Set, Union
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import Any, Dict, List, Optional, Set
 
-from .exceptions import PermissionError, ValidationError, SplunkSyncError
+from .exceptions import PermissionError, ValidationError
 from .knowledge_objects import KnowledgeObject
 
 logger = logging.getLogger(__name__)

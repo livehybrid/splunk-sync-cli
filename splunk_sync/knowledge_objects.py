@@ -5,16 +5,16 @@ This module provides classes for handling different types of Splunk knowledge
 objects with proper validation, filtering, and transformation capabilities.
 """
 
-import re
-import logging
-from abc import ABC, abstractmethod
-from pathlib import Path
-from typing import Dict, Any, List, Optional, Set, Union
-from dataclasses import dataclass
 import configparser
+import logging
+import re
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
-from .exceptions import ValidationError, FilterError, FileOperationError
 from .config import KnowledgeObjectConfig
+from .exceptions import FileOperationError, FilterError, ValidationError
 
 logger = logging.getLogger(__name__)
 
@@ -315,9 +315,7 @@ class TagHandler(KnowledgeObjectHandler):
                 issues.append("tag key cannot be empty")
 
             if value not in ("enabled", "disabled"):
-                issues.append(
-                    f"tag value must be 'enabled' or 'disabled', got: {value}"
-                )
+                issues.append("tag value must be 'enabled' or 'disabled'")
 
         return issues
 
@@ -353,7 +351,7 @@ class WorkflowActionHandler(KnowledgeObjectHandler):
         # Validate method
         method = ko.content.get("link.method", "")
         if method not in ("get", "post"):
-            issues.append(f"link.method must be 'get' or 'post', got: {method}")
+            issues.append("link.method must be 'get' or 'post'")
 
         # Validate URI
         uri = ko.content.get("link.uri", "")

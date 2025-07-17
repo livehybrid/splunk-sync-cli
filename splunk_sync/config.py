@@ -5,14 +5,14 @@ This module provides a centralized configuration system with validation,
 environment variable support, and extensible settings management.
 """
 
+import configparser
+import logging
 import os
 import re
 from dataclasses import dataclass, field
-from pathlib import Path
-from typing import Dict, List, Optional, Union, Any
-import configparser
-import logging
 from enum import Enum
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Union
 
 logger = logging.getLogger(__name__)
 
@@ -186,7 +186,20 @@ class ConfigManager:
         # Build configuration objects
         splunk_config = SplunkConnectionConfig(**config_data.get("splunk", {}))
         proxy_config = ProxyConfig(**config_data.get("proxy", {}))
-        ko_config = KnowledgeObjectConfig(**config_data.get("knowledge_objects", {}))
+        ko_dict = dict(config_data.get("knowledge_objects", {}))
+        for k in [
+            "mode",
+            "dry_run",
+            "target_app",
+            "log_level",
+            "log_file",
+            "debug",
+            "batch_size",
+            "concurrent_requests",
+            "apps_path",
+        ]:
+            ko_dict.pop(k, None)
+        ko_config = KnowledgeObjectConfig(**ko_dict)
 
         # Extract sync settings
         sync_settings = {
@@ -194,6 +207,14 @@ class ConfigManager:
             for k, v in config_data.items()
             if k not in ("splunk", "proxy", "knowledge_objects")
         }
+        # Convert mode string to SyncMode enum if present
+        if "mode" in sync_settings and isinstance(sync_settings["mode"], str):
+            from .config import SyncMode
+
+            try:
+                sync_settings["mode"] = SyncMode(sync_settings["mode"].lower())
+            except ValueError:
+                sync_settings["mode"] = SyncMode.PUSH
 
         self._config = SyncConfig(
             splunk=splunk_config,
@@ -226,7 +247,7 @@ class ConfigManager:
 
             # Convert string values to appropriate types
             for key, value in section_data.items():
-                section_data[key] = self._convert_value(value)
+                section_data[key] = self._convert_value(value, key)
 
             config_data[section_name] = section_data
 
@@ -279,27 +300,25 @@ class ConfigManager:
                 else:
                     config_data[key] = converted_value
 
-    def _convert_value(self, value: str) -> Union[str, int, bool, float]:
+    def _convert_value(
+        self, value: str, key: str = None
+    ) -> Union[str, int, bool, float, list]:
         """Convert string value to appropriate type."""
         # Boolean conversion
         if value.lower() in ("true", "yes", "1", "on"):
             return True
         if value.lower() in ("false", "no", "0", "off"):
             return False
-
         # Integer conversion
         try:
-            return int(value)
-        except ValueError:
-            pass
-
-        # Float conversion
-        try:
+            if "." not in value:
+                return int(value)
             return float(value)
         except ValueError:
             pass
-
-        # Return as string
+        # List conversion for known keys
+        if key in ("types",):
+            return [v.strip() for v in value.split(",") if v.strip()]
         return value
 
     def validate_config(self, config: SyncConfig) -> List[str]:

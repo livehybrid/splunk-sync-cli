@@ -5,26 +5,23 @@ This module tests the knowledge object management, validation,
 and transformation functionality.
 """
 
-import pytest
 import re
 from pathlib import Path
-from unittest.mock import Mock, patch, mock_open
+from unittest.mock import Mock, mock_open, patch
 
-from splunk_sync.knowledge_objects import (
-    KnowledgeObject,
-    KnowledgeObjectFilter,
-    KnowledgeObjectHandler,
-    SavedSearchHandler,
-    MacroHandler,
-    EventTypeHandler,
-    TagHandler,
-    WorkflowActionHandler,
-    TransformHandler,
-    PropsHandler,
-    KnowledgeObjectManager,
-)
+import pytest
+
 from splunk_sync.config import KnowledgeObjectConfig
-from splunk_sync.exceptions import ValidationError, FilterError, FileOperationError
+from splunk_sync.exceptions import (FileOperationError, FilterError,
+                                    ValidationError)
+from splunk_sync.knowledge_objects import (EventTypeHandler, KnowledgeObject,
+                                           KnowledgeObjectFilter,
+                                           KnowledgeObjectHandler,
+                                           KnowledgeObjectManager,
+                                           MacroHandler, PropsHandler,
+                                           SavedSearchHandler, TagHandler,
+                                           TransformHandler,
+                                           WorkflowActionHandler)
 
 
 class TestKnowledgeObject:
@@ -740,10 +737,13 @@ args = field1,field2
         # Mock parser
         mock_config = Mock()
         mock_config.sections.return_value = ["test_macro"]
-        mock_config.__getitem__.return_value = {
-            "definition": "index=main",
-            "args": "field1,field2",
-        }
+
+        mock_config.__getitem__ = lambda self, key: (
+            {"definition": "index=main", "args": "field1,field2"}
+            if key == "test_macro"
+            else (_ for _ in ()).throw(KeyError(key))
+        )
+
         mock_parser.return_value = mock_config
 
         config = KnowledgeObjectConfig()
@@ -782,7 +782,13 @@ args = field1,field2
         with patch("configparser.RawConfigParser") as mock_parser:
             mock_config = Mock()
             mock_config.sections.return_value = ["invalid_macro"]
-            mock_config.__getitem__.return_value = {"args": "field1,field2"}
+
+            mock_config.__getitem__ = lambda self, key: (
+                {"args": "field1,field2"}
+                if key == "invalid_macro"
+                else (_ for _ in ()).throw(KeyError(key))
+            )
+
             mock_parser.return_value = mock_config
 
             objects = manager.load_from_file(test_file, "macros", "search")
@@ -807,7 +813,13 @@ search = index=main
         with patch("configparser.RawConfigParser") as mock_parser:
             mock_config = Mock()
             mock_config.sections.return_value = ["filtered_search"]
-            mock_config.__getitem__.return_value = {"search": "index=main"}
+
+            mock_config.__getitem__ = lambda self, key: (
+                {"search": "index=main"}
+                if key == "filtered_search"
+                else (_ for _ in ()).throw(KeyError(key))
+            )
+
             mock_parser.return_value = mock_config
 
             objects = manager.load_from_file(test_file, "savedsearches", "search")

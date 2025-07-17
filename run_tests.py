@@ -131,7 +131,7 @@ Examples:
     
     if args.lint or args.all:
         # Run linting
-        if not run_command(["flake8", "splunk_sync/"], "Running flake8 linting"):
+        if not run_command(["flake8", "--max-line-length", "100", "splunk_sync/"], "Running flake8 linting"):
             success = False
     
     if args.type_check or args.all:

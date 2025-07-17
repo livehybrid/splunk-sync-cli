@@ -5,20 +5,16 @@ This module tests the configuration loading, validation, and management
 functionality of the Splunk Synchronization Tool.
 """
 
-import pytest
 import os
 import tempfile
 from pathlib import Path
-from unittest.mock import patch, mock_open
+from unittest.mock import mock_open, patch
 
-from splunk_sync.config import (
-    SyncMode,
-    SplunkConnectionConfig,
-    ProxyConfig,
-    KnowledgeObjectConfig,
-    SyncConfig,
-    ConfigManager,
-)
+import pytest
+
+from splunk_sync.config import (ConfigManager, KnowledgeObjectConfig,
+                                ProxyConfig, SplunkConnectionConfig,
+                                SyncConfig, SyncMode)
 from splunk_sync.exceptions import ConfigurationError
 
 

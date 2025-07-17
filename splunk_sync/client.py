@@ -5,27 +5,17 @@ This module provides a modern, robust client for interacting with Splunk
 servers through REST API calls with proper error handling and retry logic.
 """
 
+import logging
 import ssl
 import time
-import logging
-from typing import Dict, Any, Optional, List, Union
-from urllib.parse import urlencode, quote
-import base64
-import json
+from typing import Any, Dict, List, Optional
 
-from splunklib.client import connect, Service
-from splunklib.binding import HTTPError, ResponseReader
-from splunklib import six
+from splunklib.client import Service, connect
 
-from .config import SplunkConnectionConfig, ProxyConfig
-from .exceptions import (
-    ConnectionError,
-    AuthenticationError,
-    AuthorizationError,
-    APIError,
-    RetryExhaustedError,
-    SplunkSyncError,
-)
+from .config import ProxyConfig, SplunkConnectionConfig
+from .exceptions import (APIError, AuthenticationError, AuthorizationError,
+                         ConnectionError, HTTPError, RetryExhaustedError,
+                         SplunkSyncError)
 
 logger = logging.getLogger(__name__)
 
@@ -430,21 +420,10 @@ class SplunkClient:
             self.disconnect()
 
     def get_server_info(self) -> Dict[str, Any]:
-        """Get server information."""
+        """Get Splunk server information."""
         try:
-            info = self.service.info
-            return {
-                "version": info.get("version", "unknown"),
-                "build": info.get("build", "unknown"),
-                "server_name": info.get("server_name", "unknown"),
-                "license_state": info.get("license_state", "unknown"),
-                "license_labels": info.get("license_labels", []),
-                "max_users": info.get("max_users", "unknown"),
-                "cpu_arch": info.get("cpu_arch", "unknown"),
-                "os_name": info.get("os_name", "unknown"),
-                "os_version": info.get("os_version", "unknown"),
-            }
-        except Exception as e:
+            return self.service.info
+        except BaseException as e:
             raise APIError(
                 f"Failed to get server info: {e}",
                 status_code=0,

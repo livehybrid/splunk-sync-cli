@@ -5,22 +5,18 @@ This module tests the Splunk client connection, authentication,
 and API interaction functionality.
 """
 
-import pytest
 import ssl
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import MagicMock, Mock, patch
+
+import pytest
 from splunklib.binding import HTTPError
 from splunklib.client import Service
 
 from splunk_sync.client import SplunkClient
-from splunk_sync.config import SplunkConnectionConfig, ProxyConfig
-from splunk_sync.exceptions import (
-    ConnectionError,
-    AuthenticationError,
-    AuthorizationError,
-    APIError,
-    RetryExhaustedError,
-    SplunkSyncError,
-)
+from splunk_sync.config import ProxyConfig, SplunkConnectionConfig
+from splunk_sync.exceptions import (APIError, AuthenticationError,
+                                    AuthorizationError, ConnectionError,
+                                    RetryExhaustedError, SplunkSyncError)
 
 
 class TestSplunkClient:

@@ -5,18 +5,15 @@ This module provides a modern, feature-rich CLI with proper argument parsing,
 help text, and user-friendly output formatting.
 """
 
-import sys
 import argparse
-import json
-from pathlib import Path
-from typing import Optional, List, Dict, Any
 import signal
-import os
+import sys
+from typing import Any, Dict, List, Optional
 
 from .config import ConfigManager, SyncMode
+from .exceptions import ConfigurationError, SplunkSyncError
+from .logging import get_logger, logging_manager
 from .sync import SplunkSynchronizer
-from .logging import logging_manager, get_logger
-from .exceptions import SplunkSyncError, ConfigurationError
 
 logger = get_logger(__name__)
 
@@ -47,19 +44,14 @@ class SplunkSyncCLI:
 Examples:
   # Push local changes to Splunk
   splunk-sync push --host splunk.example.com --token mytoken
-  
   # Pull remote changes to local
   splunk-sync pull --config /path/to/config.conf
-  
   # Bidirectional sync with dry run
   splunk-sync sync --dry-run --debug
-  
   # Test connection
   splunk-sync test-connection --host localhost --username admin --password changeme
-  
   # Generate sample configuration
   splunk-sync generate-config --output splunk_sync.conf
-
 Environment Variables:
   SPLUNK_HOST                - Splunk server hostname
   SPLUNK_PORT                - Splunk server port (default: 8089)
@@ -302,12 +294,8 @@ Environment Variables:
 
     def _build_config(self, args) -> "SyncConfig":
         """Build configuration from arguments and config file."""
-        from .config import (
-            SyncConfig,
-            SplunkConnectionConfig,
-            ProxyConfig,
-            KnowledgeObjectConfig,
-        )
+        from .config import (KnowledgeObjectConfig, ProxyConfig,
+                             SplunkConnectionConfig, SyncConfig)
 
         # Start with base config
         try:
@@ -465,7 +453,8 @@ Environment Variables:
         print(f"Errors: {stats.errors}")
         print(f"Duration: {stats.duration:.2f}s")
         print(
-            f"Success rate: {stats.total_objects - stats.errors}/{stats.total_objects} ({((stats.total_objects - stats.errors) / max(stats.total_objects, 1) * 100):.1f}%)"
+            f"Success rate: {stats.total_objects - stats.errors}/{stats.total_objects} "
+            f"({((stats.total_objects - stats.errors) / max(stats.total_objects, 1) * 100):.1f}%)"
         )
 
         if result.warnings:

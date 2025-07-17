@@ -5,17 +5,15 @@ This module provides a comprehensive logging system with structured logging,
 multiple handlers, and proper formatting for operational visibility.
 """
 
+import json
 import logging
 import logging.config
 import logging.handlers
 import sys
-import json
-from pathlib import Path
-from typing import Dict, Any, Optional, Union
-from datetime import datetime
 import traceback
-
-from .exceptions import SplunkSyncError
+from datetime import datetime
+from pathlib import Path
+from typing import Optional
 
 
 class StructuredFormatter(logging.Formatter):
@@ -126,7 +124,7 @@ class SplunkSyncLogger:
         """Clear logging context."""
         self.context.clear()
 
-    def _add_context(self, extra: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def _add_context(self, extra: Optional[dict] = None) -> dict:
         """Add context to log message."""
         log_extra = self.context.copy()
         if extra:
@@ -184,7 +182,7 @@ class SplunkSyncLogger:
             **kwargs,
         )
 
-    def sync_stats(self, stats: Dict[str, Any]):
+    def sync_stats(self, stats: dict):
         """Log synchronization statistics."""
         self.info("Synchronization statistics", operation="sync_stats", **stats)
 
@@ -195,7 +193,7 @@ class LoggingManager:
     def __init__(self):
         """Initialize logging manager."""
         self.configured = False
-        self.loggers: Dict[str, SplunkSyncLogger] = {}
+        self.loggers: dict = {}
 
     def configure_logging(
         self,
@@ -274,7 +272,7 @@ class LoggingManager:
 
         return self.loggers[name]
 
-    def configure_from_dict(self, config: Dict[str, Any]) -> None:
+    def configure_from_dict(self, config: dict) -> None:
         """Configure logging from dictionary configuration."""
         self.configure_logging(
             level=config.get("log_level", "INFO"),
@@ -312,7 +310,7 @@ class LoggingManager:
 
         logger.info("System information", **system_info)
 
-    def log_configuration(self, config: Dict[str, Any]):
+    def log_configuration(self, config: dict):
         """Log configuration (sanitized)."""
         logger = self.get_logger("splunk_sync.config")
 
@@ -320,7 +318,7 @@ class LoggingManager:
         sanitized_config = self._sanitize_config(config)
         logger.info("Configuration loaded", **sanitized_config)
 
-    def _sanitize_config(self, config: Dict[str, Any]) -> Dict[str, Any]:
+    def _sanitize_config(self, config: dict) -> dict:
         """Remove sensitive information from configuration."""
         sanitized = {}
 
