@@ -183,11 +183,8 @@ class ConfigManager:
         config_data = self._load_base_config()
         self._apply_environment_overrides(config_data)
 
-        # Build configuration objects
-        splunk_config = SplunkConnectionConfig(**config_data.get("splunk", {}))
-        proxy_config = ProxyConfig(**config_data.get("proxy", {}))
-        ko_dict = dict(config_data.get("knowledge_objects", {}))
-        for k in [
+        # Define sync-level settings to filter out from section-specific configs
+        sync_level_keys = [
             "mode",
             "dry_run",
             "target_app",
@@ -197,7 +194,21 @@ class ConfigManager:
             "batch_size",
             "concurrent_requests",
             "apps_path",
-        ]:
+        ]
+
+        # Build configuration objects
+        splunk_dict = dict(config_data.get("splunk", {}))
+        for k in sync_level_keys:
+            splunk_dict.pop(k, None)
+        splunk_config = SplunkConnectionConfig(**splunk_dict)
+
+        proxy_dict = dict(config_data.get("proxy", {}))
+        for k in sync_level_keys:
+            proxy_dict.pop(k, None)
+        proxy_config = ProxyConfig(**proxy_dict)
+
+        ko_dict = dict(config_data.get("knowledge_objects", {}))
+        for k in sync_level_keys:
             ko_dict.pop(k, None)
         ko_config = KnowledgeObjectConfig(**ko_dict)
 
@@ -242,6 +253,14 @@ class ConfigManager:
 
         # Convert to nested dictionary
         config_data = {}
+
+        # Handle DEFAULT section (values outside any section)
+        if parser.defaults():
+            default_data = dict(parser.defaults())
+            for key, value in default_data.items():
+                config_data[key] = self._convert_value(value, key)
+
+        # Handle named sections
         for section_name in parser.sections():
             section_data = dict(parser[section_name])
 

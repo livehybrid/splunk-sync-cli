@@ -6,7 +6,7 @@ and API interaction functionality.
 """
 
 import ssl
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import MagicMock, Mock, PropertyMock, patch
 
 import pytest
 from splunklib.binding import HTTPError
@@ -94,7 +94,11 @@ class TestSplunkClient:
     @patch("splunk_sync.client.connect")
     def test_connect_authentication_error(self, mock_connect, splunk_connection_config):
         """Test connection with authentication error."""
-        mock_connect.side_effect = HTTPError("", 401, "Unauthorized")
+        mock_response = Mock()
+        mock_response.status = 401
+        mock_response.reason = "Unauthorized"
+        mock_response.body.read.return_value = b"<response><messages><msg>Authentication failed</msg></messages></response>"
+        mock_connect.side_effect = HTTPError(mock_response)
 
         client = SplunkClient(splunk_connection_config)
 
@@ -107,7 +111,13 @@ class TestSplunkClient:
     @patch("splunk_sync.client.connect")
     def test_connect_authorization_error(self, mock_connect, splunk_connection_config):
         """Test connection with authorization error."""
-        mock_connect.side_effect = HTTPError("", 403, "Forbidden")
+        mock_response = Mock()
+        mock_response.status = 403
+        mock_response.reason = "Forbidden"
+        mock_response.body.read.return_value = (
+            b"<response><messages><msg>Access denied</msg></messages></response>"
+        )
+        mock_connect.side_effect = HTTPError(mock_response)
 
         client = SplunkClient(splunk_connection_config)
 
@@ -127,9 +137,23 @@ class TestSplunkClient:
         mock_service.token = "session-token"
         mock_service.info = {"version": "8.2.0"}
 
+        mock_response1 = Mock()
+        mock_response1.status = 500
+        mock_response1.reason = "Internal Server Error"
+        mock_response1.body.read.return_value = (
+            b"<response><messages><msg>Server error</msg></messages></response>"
+        )
+
+        mock_response2 = Mock()
+        mock_response2.status = 500
+        mock_response2.reason = "Internal Server Error"
+        mock_response2.body.read.return_value = (
+            b"<response><messages><msg>Server error</msg></messages></response>"
+        )
+
         mock_connect.side_effect = [
-            HTTPError("", 500, "Internal Server Error"),
-            HTTPError("", 500, "Internal Server Error"),
+            HTTPError(mock_response1),
+            HTTPError(mock_response2),
             mock_service,
         ]
 
@@ -143,7 +167,13 @@ class TestSplunkClient:
     @patch("splunk_sync.client.connect")
     def test_connect_retry_exhausted(self, mock_connect, splunk_connection_config):
         """Test connection retry exhausted."""
-        mock_connect.side_effect = HTTPError("", 500, "Internal Server Error")
+        mock_response = Mock()
+        mock_response.status = 500
+        mock_response.reason = "Internal Server Error"
+        mock_response.body.read.return_value = (
+            b"<response><messages><msg>Server error</msg></messages></response>"
+        )
+        mock_connect.side_effect = HTTPError(mock_response)
 
         client = SplunkClient(splunk_connection_config)
 
@@ -595,7 +625,7 @@ class TestSplunkClient:
         client = SplunkClient(splunk_connection_config)
 
         mock_service = Mock()
-        mock_service.info = Mock(side_effect=Exception("Info failed"))
+        type(mock_service).info = PropertyMock(side_effect=Exception("Info failed"))
         client._service = mock_service
 
         with pytest.raises(APIError, match="Failed to get server info"):

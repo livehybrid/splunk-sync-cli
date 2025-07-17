@@ -10,7 +10,7 @@ import signal
 import sys
 from typing import Any, Dict, List, Optional
 
-from .config import ConfigManager, SyncMode
+from .config import ConfigManager, SyncConfig, SyncMode
 from .exceptions import ConfigurationError, SplunkSyncError
 from .logging import get_logger, logging_manager
 from .sync import SplunkSynchronizer
@@ -295,7 +295,7 @@ Environment Variables:
     def _build_config(self, args) -> "SyncConfig":
         """Build configuration from arguments and config file."""
         from .config import (KnowledgeObjectConfig, ProxyConfig,
-                             SplunkConnectionConfig, SyncConfig)
+                             SplunkConnectionConfig)
 
         # Start with base config
         try:
